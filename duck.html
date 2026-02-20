@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Click the Dot 🟣</title>
+  <style>
+    :root{
+      --bg1:#0f172a;
+      --bg2:#1f2937;
+      --card: rgba(255,255,255,0.08);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.65);
+      --shadow: 0 22px 70px rgba(0,0,0,0.45);
+      --dot: #a78bfa;
+      --dotGlow: rgba(167,139,250,0.6);
+    }
+
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 15% 20%, rgba(167,139,250,0.20), transparent 60%),
+        radial-gradient(900px 500px at 85% 80%, rgba(34,197,94,0.12), transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+    }
+
+    .hint {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 14px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      user-select:none;
+      pointer-events:none;
+    }
+    .hint .pill{
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .2px;
+    }
+    .hint .kbd{
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:10px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* The moving "dot button" */
+    #dotBtn{
+      position:absolute;
+      left: 50%;
+      top: 55%;
+      transform: translate(-50%,-50%);
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      user-select:none;
+      backdrop-filter: blur(10px);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+    #dotBtn:hover{ filter: brightness(1.06); }
+    #dotBtn:active{ transform: translate(-50%,-50%) scale(0.98); }
+
+    .dot{
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--dot);
+      box-shadow:
+        0 0 0 6px rgba(167,139,250,0.16),
+        0 0 30px var(--dotGlow);
+      flex: 0 0 auto;
+      position: relative;
+    }
+
+    .label{
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      font-size: 15px;
+    }
+    .sub{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    /* Duck stage */
+    #duckStage{
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      transform: translate(-50%,-50%);
+      width: min(520px, 92vw);
+      height: min(320px, 56vh);
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+      opacity:0;
+      scale: .96;
+      transition: opacity 220ms ease, scale 220ms ease;
+    }
+    #duckStage.show{ opacity:1; scale:1; }
+
+    .duckCard{
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow:hidden;
+    }
+
+    .water{
+      position:absolute;
+      left:-10%;
+      right:-10%;
+      bottom:-20%;
+      height: 55%;
+      background:
+        radial-gradient(600px 120px at 30% 20%, rgba(56,189,248,0.20), transparent 65%),
+        radial-gradient(600px 120px at 70% 50%, rgba(34,197,94,0.12), transparent 70%),
+        linear-gradient(180deg, rgba(59,130,246,0.10), rgba(59,130,246,0.04));
+      transform: rotate(-3deg);
+    }
+
+    .duckWrap{
+      position:absolute;
+      left: 10%;
+      bottom: 22%;
+      width: 190px;
+      height: 140px;
+      transform-origin: 50% 100%;
+      animation: waddle 900ms ease-in-out infinite;
+    }
+    @keyframes waddle{
+      0%,100%{ transform: translateX(0) rotate(-2deg); }
+      50%{ transform: translateX(10px) rotate(2deg); }
+    }
+
+    /* Simple duck using CSS shapes */
+    .duckBody{
+      position:absolute;
+      left: 28px;
+      top: 52px;
+      width: 120px;
+      height: 74px;
+      background: #fbbf24;
+      border-radius: 60px;
+      box-shadow: inset 0 -10px 0 rgba(0,0,0,0.08);
+    }
+    .duckHead{
+      position:absolute;
+      left: 96px;
+      top: 24px;
+      width: 66px;
+      height: 58px;
+      background: #fbbf24;
+      border-radius: 50px;
+      box-shadow: inset 0 -8px 0 rgba(0,0,0,0.08);
+    }
+    .duckBill{
+      position:absolute;
+      left: 138px;
+      top: 48px;
+      width: 44px;
+      height: 24px;
+      background: #fb7185;
+      border-radius: 18px;
+      box-shadow: inset 0 -5px 0 rgba(0,0,0,0.10);
+      transform-origin: 0% 50%;
+    }
+    .duckEye{
+      position:absolute;
+      left: 128px;
+      top: 40px;
+      width: 10px;
+      height: 10px;
+      background: #111827;
+      border-radius: 50%;
+    }
+    .duckWing{
+      position:absolute;
+      left: 44px;
+      top: 64px;
+      width: 70px;
+      height: 48px;
+      background: rgba(245,158,11,0.65);
+      border-radius: 50px;
+      transform: rotate(-10deg);
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,0.08);
+    }
+
+    .caption{
+      position:absolute;
+      left: 18px;
+      top: 18px;
+      right: 18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+    }
+    .caption h2{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .caption p{
+      margin:6px 0 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .badge{
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.22);
+      color: rgba(220,252,231,0.9);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      white-space: nowrap;
+    }
+
+    /* Quack text bubble */
+    .bubble{
+      position:absolute;
+      left: 52%;
+      bottom: 62%;
+      transform: translateX(-50%) scale(0.9);
+      background: rgba(255,255,255,0.92);
+      color: #111827;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 900;
+      letter-spacing: .3px;
+      opacity:0;
+      transition: opacity 180ms ease, transform 180ms ease;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.22);
+    }
+    .bubble::after{
+      content:"";
+      position:absolute;
+      left: 24px;
+      bottom:-8px;
+      width: 14px;
+      height: 14px;
+      background: rgba(255,255,255,0.92);
+      transform: rotate(45deg);
+      border-radius: 3px;
+    }
+    .bubble.show{
+      opacity:1;
+      transform: translateX(-50%) scale(1);
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">
+    <span class="pill">Tiny prank:</span>
+    <span class="kbd">Click the dot</span>
+    <span class="pill">→ summon the duck</span>
+  </div>
+
+  <button id="dotBtn" aria-label="Click me dot">
+    <span class="dot" aria-hidden="true"></span>
+    <span>
+      <span class="label">Click me</span>
+      <span class="sub">I promise nothing suspicious 🦆</span>
+    </span>
+  </button>
+
+  <div id="duckStage" aria-hidden="true">
+    <div class="duckCard">
+      <div class="caption">
+        <div>
+          <h2>Duck deployed ✅</h2>
+          <p>It only speaks one language.</p>
+        </div>
+        <div class="badge">QUACK MODE</div>
+      </div>
+
+      <div class="bubble" id="bubble">QUACK! 🦆</div>
+
+      <div class="duckWrap" id="duckWrap">
+        <div class="duckBody"></div>
+        <div class="duckWing"></div>
+        <div class="duckHead"></div>
+        <div class="duckEye"></div>
+        <div class="duckBill" id="bill"></div>
+      </div>
+
+      <div class="water"></div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('dotBtn');
+    const duckStage = document.getElementById('duckStage');
+    const bubble = document.getElementById('bubble');
+    const duckWrap = document.getElementById('duckWrap');
+    const bill = document.getElementById('bill');
+
+    // Smooth bouncing within viewport
+    let x = window.innerWidth * 0.5;
+    let y = window.innerHeight * 0.55;
+    let vx = 2.2;
+    let vy = 1.7;
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    function tick(){
+      const rect = btn.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      x += vx;
+      y += vy;
+
+      // Bounce off edges (keep fully visible)
+      if (x < 8) { x = 8; vx *= -1; }
+      if (y < 70) { y = 70; vy *= -1; }
+      if (x + w > window.innerWidth - 8) { x = window.innerWidth - w - 8; vx *= -1; }
+      if (y + h > window.innerHeight - 8) { y = window.innerHeight - h - 8; vy *= -1; }
+
+      btn.style.left = x + 'px';
+      btn.style.top  = y + 'px';
+      btn.style.transform = 'translate(0,0)';
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // ---- Continuous quack engine ----
+    let audioCtx = null;
+    let quackInterval = null;
+    let isQuacking = false;
+
+    function ensureAudio(){
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    // A quick "quack" using oscillator + filter + envelope (no files needed)
+    function quack(ctx){
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.12);
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(900, now);
+      filter.Q.setValueAtTime(6, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.35, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.2);
+    }
+
+    function billChomp(){
+      bill.animate(
+        [
+          { transform: 'scaleX(1) rotate(0deg)' },
+          { transform: 'scaleX(1.12) rotate(6deg)' },
+          { transform: 'scaleX(1) rotate(0deg)' }
+        ],
+        { duration: 220, easing: 'ease-out' }
+      );
+    }
+
+    function showBubble(text){
+      bubble.textContent = text;
+      bubble.classList.add('show');
+      setTimeout(()=> bubble.classList.remove('show'), 650);
+    }
+
+    function startQuacking(){
+      if (isQuacking) return;
+
+      const ctx = ensureAudio();
+      isQuacking = true;
+
+      quackInterval = setInterval(() => {
+        billChomp();
+        quack(ctx);
+        showBubble("QUACK!! 🦆");
+      }, 350); // change to 200 for faster quacks
+    }
+
+    function stopQuacking(){
+      clearInterval(quackInterval);
+      quackInterval = null;
+      isQuacking = false;
+    }
+
+    // Summon duck on first click, then keep quacking forever.
+    let summoned = false;
+
+    btn.addEventListener('click', () => {
+      if (!summoned){
+        summoned = true;
+        duckStage.classList.add('show');
+        duckStage.setAttribute('aria-hidden', 'false');
+
+        // hide the dot button after summon
+        btn.style.display = 'none';
+
+        setTimeout(startQuacking, 200);
+      }
+    });
+
+    // Optional: press Space to toggle quacking on/off after duck is summoned
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && summoned){
+        e.preventDefault();
+        if (isQuacking) {
+          stopQuacking();
+          showBubble("...ok 😤");
+        } else {
+          startQuacking();
+        }
+      }
+    });
+
+    // Keep button in-bounds on resize (before it disappears)
+    window.addEventListener('resize', () => {
+      x = clamp(x, 8, window.innerWidth - btn.offsetWidth - 8);
+      y = clamp(y, 70, window.innerHeight - btn.offsetHeight - 8);
+    });
+  </script>
+</body>
+</html>
